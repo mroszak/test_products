@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Shopping Search</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 1000;
+        }
+        .loading-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .field-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Google Shopping Search</h1>
+            
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <form id="searchForm" class="space-y-4">
+                    <div>
+                        <label for="query" class="block text-sm font-medium text-gray-700 mb-2">Search Term</label>
+                        <input type="text" id="query" name="query" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Enter product name...">
+                    </div>
+                    <button type="submit"
+                            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                        Search and Export to Excel
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Fields Included in Excel Export</h2>
+                <div class="field-list">
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <h3 class="font-medium text-gray-700">Product Information</h3>
+                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                            <li>• Title</li>
+                            <li>• Description</li>
+                            <li>• Price</li>
+                            <li>• Rating</li>
+                            <li>• Reviews Count</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <h3 class="font-medium text-gray-700">Seller Information</h3>
+                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                            <li>• Seller Name</li>
+                            <li>• Seller Rating</li>
+                            <li>• Seller Reviews</li>
+                            <li>• Shipping Info</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <h3 class="font-medium text-gray-700">Product Details</h3>
+                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                            <li>• Product Link</li>
+                            <li>• Source</li>
+                            <li>• Thumbnail</li>
+                            <li>• Position</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p class="text-gray-700">Searching and preparing Excel file...</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const query = document.getElementById('query').value;
+            const loading = document.getElementById('loading');
+            
+            if (!query) {
+                alert('Please enter a search term');
+                return;
+            }
+            
+            loading.style.display = 'block';
+            
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `query=${encodeURIComponent(query)}`
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'An error occurred');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `shopping_results_${query}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html> 
