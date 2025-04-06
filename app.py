@@ -581,4 +581,7 @@ def get_product_details(product_id):
         return None
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5002) 
+    try:
+        app.run(debug=True, port=5004)
+    except Exception as e:
+        logger.error(f"Failed to start server: {str(e)}") 

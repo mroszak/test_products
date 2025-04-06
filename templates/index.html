@@ -94,9 +94,9 @@
             </div>
 
             <!-- Results Grid Section -->
-            <div id="resultsSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <div id="resultsSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800">Search Results</h2>
+                    <h2 class="text-xl font-semibold text-gray-800">Search Scraper Results</h2>
                 </div>
                 <div id="resultsGrid" class="ag-theme-alpine"></div>
                 <div class="mt-4 flex justify-between items-center">
@@ -105,8 +105,8 @@
                     </div>
                     <div class="flex items-center space-x-2">
                         <p class="text-sm italic text-gray-600 mr-2 font-semibold"><b>Select one or more products...</b></p>
-                        <button type="button" id="enhancedDetailsBtn" class="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            Enhanced Details
+                        <button type="button" id="enhancedDetailsBtn" class="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            Product Scraper
                         </button>
                         <button type="button" id="exportBtn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                             Export to Excel
@@ -118,7 +118,7 @@
             <!-- Detailed Results Table Section -->
             <div id="detailedResultsSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800">Detailed Product Information</h2>
+                    <h2 class="text-xl font-semibold text-gray-800">Product Scraper Results</h2>
                     <button type="button" id="exportDetailedBtn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         Export Detailed to Excel
                     </button>
@@ -143,34 +143,73 @@
 
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h2 class="text-xl font-semibold mb-4 text-gray-800">Fields Included in Excel Export</h2>
-                <div class="field-list">
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <h3 class="font-medium text-gray-700">Product Information</h3>
-                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
-                            <li>• Position</li>
-                            <li>• Title</li>
-                            <li>• Price</li>
-                            <li>• Extracted Price</li>
-                            <li>• Rating</li>
-                            <li>• Rating Count</li>
-                            <li>• Description</li>
-                            <li>• Product ID</li>
-                        </ul>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Search Scraper Fields -->
+                    <div class="border rounded-lg p-4">
+                        <h3 class="text-lg font-semibold mb-3 text-blue-700">Search Scraper Fields</h3>
+                        <p class="text-sm text-gray-600 italic mb-3">Basic product information from search results</p>
+                        
+                        <div class="field-list grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-md">
+                                <h4 class="font-medium text-gray-700">Product Information</h4>
+                                <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                                    <li>• Position (in search results)</li>
+                                    <li>• Title</li>
+                                    <li>• Price (as displayed)</li>
+                                    <li>• Extracted Price (numeric)</li>
+                                    <li>• Rating (out of 5)</li>
+                                    <li>• Rating Count</li>
+                                    <li>• Description</li>
+                                    <li>• Product ID (ASIN)</li>
+                                </ul>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-md">
+                                <h4 class="font-medium text-gray-700">Source & Media</h4>
+                                <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                                    <li>• Source (retailer)</li>
+                                    <li>• Link</li>
+                                    <li>• Delivery Information</li>
+                                    <li>• Image URL</li>
+                                    <li>• Thumbnail</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <h3 class="font-medium text-gray-700">Source Information</h3>
-                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
-                            <li>• Source</li>
-                            <li>• Link</li>
-                            <li>• Delivery</li>
-                        </ul>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <h3 class="font-medium text-gray-700">Image Information</h3>
-                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
-                            <li>• Image URL</li>
-                            <li>• Thumbnail</li>
-                        </ul>
+                    
+                    <!-- Product Scraper Fields -->
+                    <div class="border rounded-lg p-4">
+                        <h3 class="text-lg font-semibold mb-3 text-green-700">Product Scraper Fields</h3>
+                        <p class="text-sm text-gray-600 italic mb-3">Detailed information from individual product pages</p>
+                        
+                        <div class="field-list grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-md">
+                                <h4 class="font-medium text-gray-700">Core Product Details</h4>
+                                <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                                    <li>• Product ID (ASIN)</li>
+                                    <li>• Title</li>
+                                    <li>• Price</li>
+                                    <li>• Brand</li>
+                                    <li>• Manufacturer</li>
+                                    <li>• Rating</li>
+                                    <li>• Reviews Count</li>
+                                    <li>• Description</li>
+                                    <li>• Features (Bullet Points)</li>
+                                </ul>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-md">
+                                <h4 class="font-medium text-gray-700">Additional Information</h4>
+                                <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                                    <li>• Availability/Stock Status</li>
+                                    <li>• Shipping Information</li>
+                                    <li>• Prime Eligibility</li>
+                                    <li>• Product Images (Main + Count)</li>
+                                    <li>• Product URL</li>
+                                    <li>• Source/Retailer</li>
+                                    <li>• Variants/Options</li>
+                                    <li>• Reviews Summary</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
