@@ -46,9 +46,14 @@
             gap: 0.5rem;
         }
         #resultsGrid {
-            height: 500px;
+            height: 520px;
             width: 100%;
-            overflow: hidden;
+            overflow: auto;
+        }
+        #detailedResultsGrid {
+            height: 520px;
+            width: 100%;
+            overflow: auto;
         }
         .hidden {
             display: none;
@@ -58,6 +63,11 @@
             --ag-header-foreground-color: #1a202c;
             --ag-header-background-color: #f7fafc;
             --ag-header-cell-hover-background-color: #edf2f7;
+        }
+        button:disabled {
+            background-color: #d1d5db !important;
+            opacity: 0.7;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -93,11 +103,12 @@
                     <div class="text-sm text-gray-600">
                         <p>Selected rows: <span id="selectedRowsCount">0</span></p>
                     </div>
-                    <div class="flex space-x-2">
+                    <div class="flex items-center space-x-2">
+                        <p class="text-sm italic text-gray-600 mr-2 font-semibold"><b>Select one or more products...</b></p>
                         <button type="button" id="enhancedDetailsBtn" class="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                             Enhanced Details
                         </button>
-                        <button type="button" id="exportBtn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                        <button type="button" id="exportBtn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                             Export to Excel
                         </button>
                     </div>
@@ -105,14 +116,16 @@
             </div>
 
             <!-- Detailed Results Table Section -->
-            <div id="detailedResultsSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <div id="detailedResultsSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold text-gray-800">Detailed Product Information</h2>
-                    <button type="button" id="exportDetailedBtn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                    <button type="button" id="exportDetailedBtn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                         Export Detailed to Excel
                     </button>
                 </div>
-                <div id="detailedResultsGrid" class="ag-theme-alpine" style="height: 500px;"></div>
+                <div class="overflow-hidden w-full">
+                    <div id="detailedResultsGrid" class="ag-theme-alpine"></div>
+                </div>
                 <div class="mt-4 flex justify-between items-center">
                     <div class="text-sm text-gray-600">
                         <p>Selected detailed rows: <span id="selectedDetailedRowsCount">0</span></p>
@@ -244,10 +257,13 @@
                 
                 // Update UI
                 document.getElementById('resultsSection').classList.remove('hidden');
-                document.getElementById('exportBtn').classList.remove('hidden');
                 
                 // Initialize grid with data
                 initializeGrid();
+                
+                // Ensure buttons start disabled
+                document.getElementById('exportBtn').disabled = true;
+                document.getElementById('enhancedDetailsBtn').disabled = true;
             })
             .catch(error => {
                 hideLoading();
@@ -313,7 +329,9 @@
                 document.getElementById('selectedRowsCount').textContent = selectedRows.length;
                 
                 // Enable/disable buttons based on selection
-                document.getElementById('enhancedDetailsBtn').disabled = selectedRows.length === 0;
+                const hasSelection = selectedRows.length > 0;
+                document.getElementById('enhancedDetailsBtn').disabled = !hasSelection;
+                document.getElementById('exportBtn').disabled = !hasSelection;
             }
         }
 
@@ -323,7 +341,12 @@
             
             // Get selected rows or all rows if none selected
             const selectedRows = gridApi.getSelectedRows();
-            let rowsToExport = selectedRows.length > 0 ? selectedRows : rowData;
+            if (selectedRows.length === 0) {
+                alert('Please select at least one product to export');
+                return;
+            }
+            
+            let rowsToExport = selectedRows;
             
             if (rowsToExport.length === 0) {
                 alert('No data to export');
@@ -692,7 +715,8 @@
                 suppressRowClickSelection: true,
                 pagination: true,
                 paginationPageSize: 10,
-                domLayout: 'autoHeight',
+                domLayout: 'normal',
+                suppressHorizontalScroll: false,
                 onSelectionChanged: function() {
                     updateDetailedButtonsBasedOnSelection();
                 },
@@ -718,6 +742,10 @@
             if (window.detailedGridApi) {
                 const selectedRows = window.detailedGridApi.getSelectedRows();
                 document.getElementById('selectedDetailedRowsCount').textContent = selectedRows.length;
+                
+                // Enable/disable export button based on selection
+                const hasSelection = selectedRows.length > 0;
+                document.getElementById('exportDetailedBtn').disabled = !hasSelection;
             }
         }
 
@@ -736,25 +764,15 @@
         function exportDetailedToExcel() {
             if (!window.detailedGridApi) return;
             
-            // Get selected rows or all rows if none selected
+            // Get selected rows
             const selectedRows = window.detailedGridApi.getSelectedRows();
             
-            // Get all rows in the grid if no rows are selected
-            let rowsToExport = [];
-            if (selectedRows.length > 0) {
-                rowsToExport = selectedRows;
-            } else {
-                // Get all rows from the grid
-                rowsToExport = [];
-                window.detailedGridApi.forEachNode(function(node) {
-                    rowsToExport.push(node.data);
-                });
-            }
-            
-            if (rowsToExport.length === 0) {
-                alert('No data to export');
+            if (selectedRows.length === 0) {
+                alert('Please select at least one product to export');
                 return;
             }
+            
+            let rowsToExport = selectedRows;
             
             showLoading('Exporting detailed product data...');
             
