@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Shopping Search</title>
+    <meta name="api-key" content="{{ api_key }}">
+    <title>Product Search</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- AG Grid CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.3/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.3/styles/ag-theme-alpine.css">
     <style>
         .loading {
             display: none;
@@ -41,12 +45,26 @@
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 0.5rem;
         }
+        #resultsGrid {
+            height: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .hidden {
+            display: none;
+        }
+        .ag-theme-alpine {
+            --ag-header-height: 50px;
+            --ag-header-foreground-color: #1a202c;
+            --ag-header-background-color: #f7fafc;
+            --ag-header-cell-hover-background-color: #edf2f7;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <div class="max-w-4xl mx-auto">
-            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Google Shopping Search</h1>
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Product Search</h1>
             
             <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                 <form id="searchForm" class="space-y-4">
@@ -56,11 +74,58 @@
                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                placeholder="Enter product name...">
                     </div>
-                    <button type="submit"
-                            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                        Search and Export to Excel
-                    </button>
+                    <div class="flex space-x-4">
+                        <button type="submit"
+                                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                            Search
+                        </button>
+                    </div>
                 </form>
+            </div>
+
+            <!-- Results Grid Section -->
+            <div id="resultsSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Search Results</h2>
+                </div>
+                <div id="resultsGrid" class="ag-theme-alpine"></div>
+                <div class="mt-4 flex justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        <p>Selected rows: <span id="selectedRowsCount">0</span></p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" id="enhancedDetailsBtn" class="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            Enhanced Details
+                        </button>
+                        <button type="button" id="exportBtn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                            Export to Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Results Table Section -->
+            <div id="detailedResultsSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Detailed Product Information</h2>
+                    <button type="button" id="exportDetailedBtn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                        Export Detailed to Excel
+                    </button>
+                </div>
+                <div id="detailedResultsGrid" class="ag-theme-alpine" style="height: 500px;"></div>
+                <div class="mt-4 flex justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        <p>Selected detailed rows: <span id="selectedDetailedRowsCount">0</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="loading">
+                <div class="loading-content">
+                    <div class="spinner"></div>
+                    <p id="loadingText" class="text-lg font-medium text-gray-700">Loading...</p>
+                </div>
             </div>
 
             <div class="bg-white rounded-lg shadow-md p-6">
@@ -69,29 +134,29 @@
                     <div class="bg-gray-50 p-3 rounded-md">
                         <h3 class="font-medium text-gray-700">Product Information</h3>
                         <ul class="mt-2 space-y-1 text-sm text-gray-600">
-                            <li>• Title</li>
-                            <li>• Description</li>
-                            <li>• Price</li>
-                            <li>• Rating</li>
-                            <li>• Reviews Count</li>
-                        </ul>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <h3 class="font-medium text-gray-700">Seller Information</h3>
-                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
-                            <li>• Seller Name</li>
-                            <li>• Seller Rating</li>
-                            <li>• Seller Reviews</li>
-                            <li>• Shipping Info</li>
-                        </ul>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <h3 class="font-medium text-gray-700">Product Details</h3>
-                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
-                            <li>• Product Link</li>
-                            <li>• Source</li>
-                            <li>• Thumbnail</li>
                             <li>• Position</li>
+                            <li>• Title</li>
+                            <li>• Price</li>
+                            <li>• Extracted Price</li>
+                            <li>• Rating</li>
+                            <li>• Rating Count</li>
+                            <li>• Description</li>
+                            <li>• Product ID</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <h3 class="font-medium text-gray-700">Source Information</h3>
+                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                            <li>• Source</li>
+                            <li>• Link</li>
+                            <li>• Delivery</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <h3 class="font-medium text-gray-700">Image Information</h3>
+                        <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                            <li>• Image URL</li>
+                            <li>• Thumbnail</li>
                         </ul>
                     </div>
                 </div>
@@ -99,57 +164,639 @@
         </div>
     </div>
 
-    <div id="loading" class="loading">
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <p class="text-gray-700">Searching and preparing Excel file...</p>
-        </div>
-    </div>
-
+    <!-- AG Grid JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.3/dist/ag-grid-community.min.js"></script>
     <script>
-        document.getElementById('searchForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Global variables
+        let gridApi;
+        let columnDefs = [];
+        let rowData = [];
+        let originalRowData = [];
+
+        // Initialize the grid
+        document.addEventListener('DOMContentLoaded', function() {
+            // Search form submission
+            document.getElementById('searchForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const query = document.getElementById('query').value.trim();
+                if (query) {
+                    showLoading('Searching products...');
+                    searchProducts(query);
+                }
+            });
+
+            // Export button click
+            document.getElementById('exportBtn').addEventListener('click', function() {
+                exportToExcel();
+            });
+
+            // Enhanced Details button click
+            document.getElementById('enhancedDetailsBtn').addEventListener('click', function() {
+                if (gridApi.getSelectedRows().length > 0) {
+                    showLoading('Getting detailed product information...');
+                    getEnhancedDetails();
+                }
+            });
             
-            const query = document.getElementById('query').value;
-            const loading = document.getElementById('loading');
+            // Export Detailed button click
+            document.getElementById('exportDetailedBtn').addEventListener('click', function() {
+                exportDetailedToExcel();
+            });
+        });
+
+        // Search products function
+        function searchProducts(query) {
+            showLoading('Searching products...');
             
-            if (!query) {
-                alert('Please enter a search term');
+            fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `query=${encodeURIComponent(query)}&format=json`
+            })
+            .then(response => {
+                if (!response.ok && response.status !== 404) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                
+                // Check for error message
+                if (data.error) {
+                    alert(data.error);
+                    document.getElementById('resultsSection').classList.remove('hidden');
+                    return;
+                }
+                
+                // Handle empty results with message
+                if (!data.results || data.results.length === 0) {
+                    alert(data.message || 'No results found. Please try a different search term.');
+                    document.getElementById('resultsSection').classList.remove('hidden');
+                    return;
+                }
+                
+                // Store original data
+                originalRowData = data.results;
+                rowData = [...data.results];
+                
+                // Update UI
+                document.getElementById('resultsSection').classList.remove('hidden');
+                document.getElementById('exportBtn').classList.remove('hidden');
+                
+                // Initialize grid with data
+                initializeGrid();
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                alert('An error occurred while searching. Please try again: ' + error.message);
+                document.getElementById('resultsSection').classList.remove('hidden');
+            });
+        }
+
+        // Initialize the grid
+        function initializeGrid() {
+            // Define specific column definitions based on the API response fields
+            columnDefs = [
+                {
+                    headerName: 'Select',
+                    field: 'select',
+                    headerCheckboxSelection: true,
+                    checkboxSelection: true,
+                    width: 40,
+                    pinned: 'left'
+                },
+                { headerName: 'Position', field: 'position', sortable: true, filter: true, resizable: true },
+                { headerName: 'Title', field: 'title', sortable: true, filter: true, resizable: true },
+                { headerName: 'Link', field: 'link', sortable: true, filter: true, resizable: true },
+                { headerName: 'Price', field: 'price', sortable: true, filter: true, resizable: true },
+                { headerName: 'Extracted Price', field: 'extracted_price', sortable: true, filter: true, resizable: true },
+                { headerName: 'Rating', field: 'rating', sortable: true, filter: true, resizable: true },
+                { headerName: 'Rating Count', field: 'ratingCount', sortable: true, filter: true, resizable: true },
+                { headerName: 'Image URL', field: 'imageUrl', sortable: true, filter: true, resizable: true },
+                { headerName: 'Thumbnail', field: 'thumbnail', sortable: true, filter: true, resizable: true },
+                { headerName: 'Description', field: 'description', sortable: true, filter: true, resizable: true },
+                { headerName: 'Source', field: 'source', sortable: true, filter: true, resizable: true },
+                { headerName: 'Delivery', field: 'delivery', sortable: true, filter: true, resizable: true },
+                { headerName: 'Product ID', field: 'productId', sortable: true, filter: true, resizable: true }
+            ];
+            
+            // Create grid options
+            const gridOptions = {
+                columnDefs: columnDefs,
+                rowData: rowData,
+                rowSelection: 'multiple',
+                suppressRowClickSelection: true,
+                pagination: true,
+                paginationPageSize: 10,
+                domLayout: 'autoHeight',
+                onSelectionChanged: function() {
+                    updateButtonsBasedOnSelection();
+                }
+            };
+            
+            // Create the grid
+            const gridDiv = document.querySelector('#resultsGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
+            
+            // Store the grid API
+            gridApi = gridOptions.api;
+        }
+
+        // Update button states based on selection
+        function updateButtonsBasedOnSelection() {
+            if (gridApi) {
+                const selectedRows = gridApi.getSelectedRows();
+                document.getElementById('selectedRowsCount').textContent = selectedRows.length;
+                
+                // Enable/disable buttons based on selection
+                document.getElementById('enhancedDetailsBtn').disabled = selectedRows.length === 0;
+            }
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            if (!gridApi) return;
+            
+            // Get selected rows or all rows if none selected
+            const selectedRows = gridApi.getSelectedRows();
+            let rowsToExport = selectedRows.length > 0 ? selectedRows : rowData;
+            
+            if (rowsToExport.length === 0) {
+                alert('No data to export');
                 return;
             }
             
-            loading.style.display = 'block';
+            console.log('Exporting rows:', rowsToExport.length);
             
-            try {
-                const response = await fetch('/search', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `query=${encodeURIComponent(query)}`
-                });
-                
+            // Create form data
+            const formData = new FormData();
+            formData.append('query', document.getElementById('query').value);
+            formData.append('format', 'excel');
+            formData.append('selected_rows', JSON.stringify(rowsToExport));
+            formData.append('visible_columns', JSON.stringify([
+                'position', 'title', 'link', 'price', 'extracted_price', 
+                'rating', 'ratingCount', 'imageUrl', 'thumbnail', 
+                'description', 'source', 'delivery', 'productId'
+            ]));
+            
+            console.log('Sending export request...');
+            
+            // Submit form
+            fetch('/search', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'An error occurred');
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Export failed');
+                    });
                 }
-                
-                const blob = await response.blob();
+                return response.blob();
+            })
+            .then(blob => {
+                console.log('Received blob:', blob);
+                // Create download link
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
+                a.style.display = 'none';
                 a.href = url;
-                a.download = `shopping_results_${query}.xlsx`;
+                a.download = `shopping_results_${document.getElementById('query').value}.xlsx`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                
-            } catch (error) {
-                alert(error.message);
-            } finally {
-                loading.style.display = 'none';
+                a.remove();
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                alert(`Export failed: ${error.message}`);
+            });
+        }
+
+        // Get enhanced details for selected products
+        function getEnhancedDetails() {
+            // Get selected rows
+            const selectedRows = gridApi.getSelectedRows();
+            
+            // Check if any rows are selected
+            if (selectedRows.length === 0) {
+                alert('Please select at least one product to get enhanced details');
+                return;
             }
-        });
+            
+            // Extract product IDs from selected rows
+            const productIds = selectedRows
+                .map(row => row.productId)
+                .filter(id => id); // Filter out empty or undefined IDs
+            
+            if (productIds.length === 0) {
+                alert('No valid product IDs found in the selected rows');
+                hideLoading();
+                return;
+            }
+            
+            showLoading(`Getting enhanced details for ${productIds.length} products...`);
+            
+            // Call the backend to scrape product details
+            fetch('/scrape-products', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_ids: productIds
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // Display the results in a table
+                displayEnhancedDetails(data.results);
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error:', error);
+                alert('An error occurred while getting enhanced details. Please try again.');
+            });
+        }
+
+        // Display enhanced product details in a table
+        function displayEnhancedDetails(results) {
+            // Show the detailed results section
+            document.getElementById('detailedResultsSection').classList.remove('hidden');
+            
+            // Process results for the grid
+            const detailedRowData = results.map(product => {
+                // Handle products with errors
+                if (product.error) {
+                    return {
+                        productId: product.productId || '',
+                        title: product.title || `Product ${product.productId || ''}`,
+                        error: product.error,
+                        hasError: true
+                    };
+                }
+                
+                // Format features from bullet_points if available
+                let featuresText = '';
+                if (product.bullet_points) {
+                    const points = product.bullet_points.split('\n').slice(0, 3);
+                    featuresText = points.join(', ');
+                    if (product.bullet_points.split('\n').length > 3) featuresText += '...';
+                }
+                
+                // Format variants from variation if available
+                let variantsText = '';
+                if (product.variation && product.variation.length > 0) {
+                    variantsText = product.variation.slice(0, 3).map(variant => {
+                        if (variant.dimensions) {
+                            return Object.entries(variant.dimensions)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(', ');
+                        }
+                        return '';
+                    }).filter(text => text).join(' | ');
+                    
+                    if (product.variation.length > 3) variantsText += '...';
+                }
+                
+                // Extract source from URL if available
+                let source = '';
+                if (product.url) {
+                    try {
+                        const urlObj = new URL(product.url);
+                        source = urlObj.hostname.replace('www.', '');
+                    } catch (e) {
+                        source = 'amazon.com'; // Default if URL parsing fails
+                    }
+                } else {
+                    source = 'amazon.com'; // Default source
+                }
+                
+                // Format reviews if available
+                let reviewsSummary = '';
+                if (product.reviews && product.reviews.length > 0) {
+                    reviewsSummary = `${product.reviews.length} reviews available`;
+                }
+                
+                // Return a flattened object for the grid
+                return {
+                    productId: product.productId || product.asin || '',
+                    title: product.title || '',
+                    price: typeof product.price === 'number' ? `$${product.price.toFixed(2)}` : (product.price || ''),
+                    rating: product.rating || 0,
+                    reviewsCount: product.reviews_count || 0,
+                    availability: product.stock || '',
+                    inStock: product.stock && product.stock.toLowerCase().includes('in stock') ? 'Yes' : 'No',
+                    shipping: product.shipping || '',
+                    brand: product.brand || '',
+                    manufacturer: product.manufacturer || '',
+                    description: product.description ? (product.description.length > 100 ? product.description.substring(0, 100) + '...' : product.description) : '',
+                    isPrimeEligible: product.is_prime_eligible ? 'Yes' : 'No',
+                    mainImage: (product.images && product.images.length > 0) ? product.images[0] : '',
+                    imageCount: (product.images && product.images.length) || 0,
+                    features: featuresText,
+                    bulletPoints: product.bullet_points ? (product.bullet_points.length > 100 ? product.bullet_points.substring(0, 100) + '...' : product.bullet_points) : '',
+                    variants: variantsText,
+                    reviewsSummary: reviewsSummary,
+                    url: product.url || '',
+                    source: source,
+                    hasError: false
+                };
+            });
+            
+            // Initialize or update the detailed grid
+            if (!window.detailedGridApi) {
+                initializeDetailedGrid(detailedRowData);
+            } else {
+                window.detailedGridApi.setRowData(detailedRowData);
+            }
+            
+            // Scroll to the detailed results section
+            document.getElementById('detailedResultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Initialize the detailed grid
+        function initializeDetailedGrid(rowData) {
+            // Define column definitions for the detailed grid
+            const detailedColumnDefs = [
+                {
+                    headerName: 'Select',
+                    field: 'select',
+                    headerCheckboxSelection: true,
+                    checkboxSelection: true,
+                    width: 50,
+                    pinned: 'left'
+                },
+                { 
+                    headerName: 'Product ID', 
+                    field: 'productId', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true,
+                    width: 120
+                },
+                { 
+                    headerName: 'Title', 
+                    field: 'title', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 300,
+                    cellRenderer: function(params) {
+                        if (params.data.hasError) {
+                            return `<span class="text-red-600">${params.value} (Error: ${params.data.error})</span>`;
+                        }
+                        return params.value;
+                    }
+                },
+                { 
+                    headerName: 'Price', 
+                    field: 'price', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 120
+                },
+                { 
+                    headerName: 'Rating', 
+                    field: 'rating', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 100,
+                    cellRenderer: function(params) {
+                        if (params.value > 0) {
+                            return `<span class="flex items-center"><span class="text-yellow-500 mr-1">★</span> ${params.value}</span>`;
+                        }
+                        return '';
+                    }
+                },
+                { 
+                    headerName: 'Reviews', 
+                    field: 'reviewsCount', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 100
+                },
+                { 
+                    headerName: 'In Stock', 
+                    field: 'inStock', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 100,
+                    cellRenderer: function(params) {
+                        if (params.value === 'Yes') {
+                            return '<span class="text-green-600">Yes</span>';
+                        } else if (params.value === 'No') {
+                            return '<span class="text-red-600">No</span>';
+                        }
+                        return params.value;
+                    }
+                },
+                { 
+                    headerName: 'Prime', 
+                    field: 'isPrimeEligible', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 100,
+                    cellRenderer: function(params) {
+                        if (params.value === 'Yes') {
+                            return '<span class="text-blue-600">✓ Prime</span>';
+                        }
+                        return '';
+                    }
+                },
+                { 
+                    headerName: 'Brand', 
+                    field: 'brand', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 150
+                },
+                { 
+                    headerName: 'Description', 
+                    field: 'description', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 200
+                },
+                { 
+                    headerName: 'Features', 
+                    field: 'features', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 200
+                },
+                { 
+                    headerName: 'Highlights', 
+                    field: 'bulletPoints', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 200
+                },
+                { 
+                    headerName: 'Variants', 
+                    field: 'variants', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 200
+                },
+                { 
+                    headerName: 'Source', 
+                    field: 'source', 
+                    sortable: true, 
+                    filter: true, 
+                    resizable: true, 
+                    width: 120
+                },
+                { 
+                    headerName: 'Image', 
+                    field: 'mainImage', 
+                    sortable: false, 
+                    filter: false, 
+                    resizable: true, 
+                    width: 120,
+                    cellRenderer: function(params) {
+                        if (params.value) {
+                            return `<img src="${params.value}" alt="Product" style="max-width: 100px; max-height: 100px; object-fit: contain;">`;
+                        }
+                        return '';
+                    }
+                }
+            ];
+            
+            // Create grid options
+            const gridOptions = {
+                columnDefs: detailedColumnDefs,
+                rowData: rowData,
+                rowSelection: 'multiple',
+                suppressRowClickSelection: true,
+                pagination: true,
+                paginationPageSize: 10,
+                domLayout: 'autoHeight',
+                onSelectionChanged: function() {
+                    updateDetailedButtonsBasedOnSelection();
+                },
+                getRowHeight: function(params) {
+                    // For rows with images, give more height
+                    if (params.data.mainImage) {
+                        return 120;
+                    }
+                    return 48;
+                }
+            };
+            
+            // Create the grid
+            const gridDiv = document.querySelector('#detailedResultsGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
+            
+            // Store the grid API globally
+            window.detailedGridApi = gridOptions.api;
+        }
+        
+        // Update buttons based on selection in detailed grid
+        function updateDetailedButtonsBasedOnSelection() {
+            if (window.detailedGridApi) {
+                const selectedRows = window.detailedGridApi.getSelectedRows();
+                document.getElementById('selectedDetailedRowsCount').textContent = selectedRows.length;
+            }
+        }
+
+        // Show loading overlay
+        function showLoading(message) {
+            document.getElementById('loadingText').textContent = message;
+            document.getElementById('loadingOverlay').style.display = 'block';
+        }
+
+        // Hide loading overlay
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Export detailed results to Excel
+        function exportDetailedToExcel() {
+            if (!window.detailedGridApi) return;
+            
+            // Get selected rows or all rows if none selected
+            const selectedRows = window.detailedGridApi.getSelectedRows();
+            
+            // Get all rows in the grid if no rows are selected
+            let rowsToExport = [];
+            if (selectedRows.length > 0) {
+                rowsToExport = selectedRows;
+            } else {
+                // Get all rows from the grid
+                rowsToExport = [];
+                window.detailedGridApi.forEachNode(function(node) {
+                    rowsToExport.push(node.data);
+                });
+            }
+            
+            if (rowsToExport.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            showLoading('Exporting detailed product data...');
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('query', document.getElementById('query').value);
+            formData.append('format', 'excel');
+            formData.append('selected_rows', JSON.stringify(rowsToExport));
+            formData.append('is_detailed', 'true');
+            
+            // Submit form to the same endpoint as regular export
+            fetch('/search', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Export failed');
+                    });
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                hideLoading();
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `detailed_product_data_${document.getElementById('query').value}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Export error:', error);
+                alert(`Export failed: ${error.message}`);
+            });
+        }
     </script>
 </body>
 </html> 

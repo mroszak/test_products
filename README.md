@@ -1,20 +1,16 @@
-# Google Shopping API Integration
+# Amazon Product Search API Integration
 
-This project uses SerpApi to interact with Google Shopping data.
+This project uses Oxylabs API to search for products on Amazon.
 
 ## Setup
 
-1. Install the required dependencies:
-```bash
-pip install -r requirements.txt
+1. Clone this repository
+2. Create a `.env` file in the root directory and add your Oxylabs credentials:
 ```
-
-2. Create a `.env` file in the root directory and add your SerpApi API key:
+OXYLABS_USERNAME=your_username_here
+OXYLABS_PASSWORD=your_password_here
 ```
-SERPAPI_KEY=your_api_key_here
-```
-
-3. Get your API key from [SerpApi](https://serpapi.com/)
+3. Get your Oxylabs credentials from [Oxylabs](https://oxylabs.io/)
 
 ## Usage
 
@@ -23,8 +19,21 @@ Run the main script:
 python main.py
 ```
 
+Or run the web application:
+```bash
+python app.py
+```
+
+This will start a web server where you can search for Amazon products using the Oxylabs API. The application allows you to:
+
+1. Search for products on Amazon
+2. View detailed product information
+3. Export results to Excel
+4. Enhance product images with AI
+
 ## Features
 
-- Search for products on Google Shopping
-- Get detailed product information
-- Filter and sort results 
+- Amazon product search
+- Product data extraction
+- AI-powered image enhancement
+- Excel export functionality 

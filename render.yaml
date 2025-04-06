@@ -1,9 +1,11 @@
 services:
   - type: web
-    name: google-shopping-app
+    name: product-search
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
-      - key: SERPAPI_KEY
+      - key: OXYLABS_USERNAME
+        sync: false
+      - key: OXYLABS_PASSWORD
         sync: false 
